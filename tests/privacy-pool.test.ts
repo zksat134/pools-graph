@@ -9,22 +9,31 @@ import {
 import { Address, Bytes, BigInt } from "@graphprotocol/graph-ts"
 import { handleDeposit, handleWithdrawal } from "../src/privacy-pool"
 import { createDepositEvent, createWithdrawalEvent } from "./privacy-pool-utils"
+import { createPrivacyPoolCreatedEvent } from "./privacy-pool-factory-utils"
+import { handlePrivacyPoolCreated } from "../src/privacy-pool-factory"
 
 // Tests structure (matchstick-as >=0.5.0)
 // https://thegraph.com/docs/en/developer/matchstick/#tests-structure-0-5-0
 
 describe("Describe entity assertions", () => {
   beforeAll(() => {
-    let commitment = Bytes.fromHexString('0x1234567890')
+    let asset = Address.fromString('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
     let denomination = BigInt.fromI32(100)
+    let commitment = Bytes.fromHexString('0x1234567890')
+    let leaf = Bytes.fromHexString('0x9876543210')
     let leafIndex = BigInt.fromI32(0)
-    let timestamp = BigInt.fromI32(234)
+
     let newDepositEvent = createDepositEvent(
       commitment,
+      leaf,
+      asset,
       denomination,
       leafIndex,
-      timestamp
     )
+    let privacyPool = newDepositEvent.address
+    let newPrivacyPoolCreatedEvent = createPrivacyPoolCreatedEvent(privacyPool, asset, denomination)
+
+    handlePrivacyPoolCreated(newPrivacyPoolCreatedEvent)
     handleDeposit(newDepositEvent)
 
     let recipient = Address.fromString('0xf00df00df00df00df00df00df00df00df00df00d')
@@ -32,6 +41,7 @@ describe("Describe entity assertions", () => {
     let subsetRoot = Bytes.fromHexString('0xfacefacefacefacefacefacefacefacefacefacefacefacefacefacefaceface')
     let nullifier = Bytes.fromHexString('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef')
     let fee = BigInt.fromI32(42)
+
     let newWithdrawalEvent = createWithdrawalEvent(
       recipient,
       relayer,
@@ -54,20 +64,32 @@ describe("Describe entity assertions", () => {
     assert.fieldEquals(
       "Commitment",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
-      "timestamp",
-      "234"
-    )
-    assert.fieldEquals(
-      "Commitment",
-      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
-      "contractAddress",
+      "id",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
     )
     assert.fieldEquals(
       "Commitment",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
-      "sender",
-      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
+      "commitment",
+      "0x1234567890"
+    )
+    assert.fieldEquals(
+      "Commitment",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "leaf",
+      "0x9876543210"
+    )
+    assert.fieldEquals(
+      "Commitment",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "asset",
+      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    )
+    assert.fieldEquals(
+      "Commitment",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "denomination",
+      "100"
     )
     assert.fieldEquals(
       "Commitment",
@@ -78,54 +100,96 @@ describe("Describe entity assertions", () => {
     assert.fieldEquals(
       "Commitment",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
-      "commitment",
-      "0x1234567890"
-    )
-  })
-
-  test("SubsetRoot created and stored", () => {
-    assert.entityCount("SubsetRoot", 1)
-    assert.fieldEquals(
-      "SubsetRoot",
-      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
       "timestamp",
       "1"
     )
     assert.fieldEquals(
-      "SubsetRoot",
+      "Commitment",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
-      "contractAddress",
+      "pool",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
     )
     assert.fieldEquals(
-      "SubsetRoot",
+      "Commitment",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
       "sender",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
     )
+  })
+
+  test("SubsetData created and stored", () => {
+    assert.entityCount("SubsetData", 1)
     assert.fieldEquals(
-      "SubsetRoot",
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "id",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
+    )
+    assert.fieldEquals(
+      "SubsetData",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
       "recipient",
       "0xf00df00df00df00df00df00df00df00df00df00d"
     )
     assert.fieldEquals(
-      "SubsetRoot",
+      "SubsetData",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
       "relayer",
       "0xc0dec0dec0dec0dec0dec0dec0dec0dec0dec0de"
     )
     assert.fieldEquals(
-      "SubsetRoot",
+      "SubsetData",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
       "subsetRoot",
       "0xfacefacefacefacefacefacefacefacefacefacefacefacefacefacefaceface"
     )
     assert.fieldEquals(
-      "SubsetRoot",
+      "SubsetData",
       '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
       "nullifier",
       "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "fee",
+      "42"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "timestamp",
+      "1"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "pool",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "sender",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "accessType",
+      "0"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "bitLength",
+      "1"
+    )
+    assert.fieldEquals(
+      "SubsetData",
+      '0xa16081f360e3847006db660bae1c6d1b2e17ec2a',
+      "subsetData",
+      "0x00"
     )
   })
 })

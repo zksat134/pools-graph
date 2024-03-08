@@ -1,29 +1,34 @@
-type Commitment @entity(immutable: true) {
-  id: Bytes!
-  timestamp: BigInt! # uint256
-  contractAddress: Bytes! # address
-  sender: Bytes! # address
-  leafIndex: BigInt! # uint256
-  commitment: Bytes! # bytes32
+type PrivacyPool @entity {
+  id: ID!
+  asset: Bytes!
+  denomination: BigInt!
+  commitments: [Commitment!]! @derivedFrom(field: "pool")
+  subsetDatas: [SubsetData!]! @derivedFrom(field: "pool")
 }
 
-type SubsetRoot @entity(immutable: true) {
+type Commitment @entity(immutable: true) {
   id: Bytes!
+  commitment: Bytes! # bytes32
+  leaf: Bytes! # bytes32
+  asset: Bytes! # address
+  denomination: BigInt! # uint256
+  leafIndex: BigInt! # uint256
   timestamp: BigInt! # uint256
-  contractAddress: Bytes! # address
+  pool: PrivacyPool!
   sender: Bytes! # address
-  subsetRoot: Bytes! # bytes32
-  relayer: Bytes! # address
-  recipient: Bytes! # address
-  nullifier: Bytes! # bytes32
 }
 
 type SubsetData @entity(immutable: true) {
   id: Bytes!
-  contractAddress: Bytes! # address
+  recipient: Bytes! # address
+  relayer: Bytes! # address
   subsetRoot: Bytes! # bytes32
   nullifier: Bytes! # bytes32
-  accessType: BigInt! # uint256
-  bitLength: BigInt! # uint256
+  fee: BigInt! # uint256
+  timestamp: BigInt! # uint256
+  pool: PrivacyPool!
+  sender: Bytes! # address
+  accessType: Int! # uint8
+  bitLength: Int! # uint24
   subsetData: Bytes! # bytes
 }
